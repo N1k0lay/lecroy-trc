@@ -59,7 +59,7 @@ const span = getSampleByteRange(header, range);
 
 ## Чтение сегментов Sequence
 
-Сегменты нумеруются с нуля. В блоке `TRIGTIME` для каждого сегмента хранятся две временные величины в секундах. Чтобы запустить пример, скачайте [pulse_sequence.trc](https://raw.githubusercontent.com/lobis/lecroy-scope/2f627b418100d979c5a9b9dc9312fc275c534ce7/tests/files/pulse_sequence.trc).
+Сегменты нумеруются с нуля. В блоке `TRIGTIME` для каждого сегмента хранятся две временные величины в секундах. Для запуска примера сохраните запись Sequence под именем `pulse_sequence.trc`.
 
 ```js
 import { readFile } from 'node:fs/promises';
@@ -223,7 +223,7 @@ npm run test:upstream
 npm pack --dry-run
 ```
 
-Модульные тесты используют сгенерированные записи. Дополнительная проверка скачивает зафиксированный пример `pulse_sequence.trc` и сверяет 20 сегментов с результатами [lecroyscope 1.0.0](https://pypi.org/project/lecroyscope/1.0.0/). Для локальной копии выполните `npm run test:upstream -- /path/to/pulse_sequence.trc`.
+Модульные тесты используют сгенерированные записи. Дополнительная проверка скачивает фиксированный образец `pulse_sequence.trc` и сверяет отсчёты и время всех 20 сегментов с сохранённым эталоном. Для локальной копии выполните `npm run test:upstream -- /path/to/pulse_sequence.trc`.
 
 Если файл читается некорректно, укажите модель прибора, шаблон дескриптора и по возможности приложите пример. Для развёртывания используйте [поддерживаемую LTS-ветку Node.js](https://nodejs.org/en/about/previous-releases).
 

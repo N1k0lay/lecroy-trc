@@ -59,7 +59,7 @@ const span = getSampleByteRange(header, range);
 
 ## Read a Sequence segment
 
-A Sequence contains consecutive segments. Each has a zero-based index and two timing values in seconds in the `TRIGTIME` block. Download [pulse_sequence.trc](https://raw.githubusercontent.com/lobis/lecroy-scope/2f627b418100d979c5a9b9dc9312fc275c534ce7/tests/files/pulse_sequence.trc) to run this example.
+A Sequence contains consecutive segments. Each has a zero-based index and two timing values in seconds in the `TRIGTIME` block. To run this example, save a Sequence recording as `pulse_sequence.trc`.
 
 ```js
 import { readFile } from 'node:fs/promises';
@@ -223,7 +223,7 @@ npm run test:upstream
 npm pack --dry-run
 ```
 
-The unit tests use generated traces. The upstream check downloads a pinned `pulse_sequence.trc` sample and compares all 20 segments against reference values from [lecroyscope 1.0.0](https://pypi.org/project/lecroyscope/1.0.0/). For a local copy, use `npm run test:upstream -- /path/to/pulse_sequence.trc`.
+The unit tests use generated traces. The upstream check downloads a pinned `pulse_sequence.trc` sample and compares samples and timing values for all 20 segments against a saved reference. For a local copy, use `npm run test:upstream -- /path/to/pulse_sequence.trc`.
 
 For a format compatibility issue, include the instrument model, descriptor template, and a shareable sample if available. For production deployments, use a [maintained Node.js LTS release](https://nodejs.org/en/about/previous-releases).
 
