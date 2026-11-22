@@ -1,0 +1,37 @@
+{
+  "name": "lecroy-trc",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Read Teledyne LeCroy TRC headers and waveform samples in Node.js",
+  "license": "MIT",
+  "keywords": [
+    "lecroy",
+    "trc",
+    "oscilloscope",
+    "waveform"
+  ],
+  "type": "commonjs",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run build && node --test",
+    "prepack": "npm run build"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
+  }
+}
