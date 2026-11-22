@@ -91,10 +91,12 @@ console.log({ triggerTime: timing.triggerTime, samples: values.length, firstTime
 
 ## Use in a browser
 
-Serve `dist/browser/index.js` as a JavaScript module, for example at `/vendor/lecroy-trc.js`. It accepts bytes from a browser `File` or a network response.
+If your app uses a bundler, import from `lecroy-trc` as in the quick start.
+
+For a page without a bundler, copy `dist/browser/index.js` from the installed package next to your page's JavaScript module and name the copy `lecroy-trc.js`. Import it using a relative URL.
 
 ```js
-import { readTrcHeader } from '/vendor/lecroy-trc.js';
+import { readTrcHeader } from './lecroy-trc.js';
 
 const header = readTrcHeader(new Uint8Array(await file.slice(0, 512).arrayBuffer()));
 console.log(header.instrumentName);

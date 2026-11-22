@@ -4,7 +4,7 @@
 
 Неофициальная библиотека для чтения осциллограмм Teledyne LeCroy в формате `.trc` в Node.js и браузере. Позволяет получить метаданные, прочитать отдельные сегменты Sequence и построить обзор графика с сохранением коротких пиков.
 
-**Node.js ≥ 18.12.0** · **Типы TypeScript в пакете** · **Без зависимостей времени выполнения** · **[MIT](LICENSE)**
+**Node.js ≥ 18.12.0** · **Типы TypeScript в пакете** · **Без зависимостей** · **[MIT](LICENSE)**
 
 ## Установка
 
@@ -91,10 +91,12 @@ console.log({ triggerTime: timing.triggerTime, samples: values.length, firstTime
 
 ## Использование в браузере
 
-Раздавайте `dist/browser/index.js` как JavaScript-модуль, например по адресу `/vendor/lecroy-trc.js`. Ему можно передать байты из объекта `File` или сетевого ответа.
+Если проект использует сборщик, импортируйте из `lecroy-trc`, как в быстром старте.
+
+Для страницы без сборщика скопируйте `dist/browser/index.js` из установленного пакета рядом с JavaScript-модулем вашей страницы и назовите копию `lecroy-trc.js`. Подключите её по относительному пути.
 
 ```js
-import { readTrcHeader } from '/vendor/lecroy-trc.js';
+import { readTrcHeader } from './lecroy-trc.js';
 
 const header = readTrcHeader(new Uint8Array(await file.slice(0, 512).arrayBuffer()));
 console.log(header.instrumentName);
