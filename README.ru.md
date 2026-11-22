@@ -8,23 +8,10 @@
 
 ## Установка
 
-Когда версия 0.2.0 появится в npm, установите её в своём проекте.
+[lecroy-trc в npm](https://www.npmjs.com/package/lecroy-trc)
 
 ```sh
 npm install lecroy-trc
-```
-
-Для установки из исходников соберите локальный npm-архив в корне репозитория.
-
-```sh
-npm ci
-npm pack
-```
-
-Установите в своём проекте архив, имя которого вывела команда `npm pack`.
-
-```sh
-npm install /path/to/lecroy-trc-0.2.0.tgz
 ```
 
 ## Быстрый старт

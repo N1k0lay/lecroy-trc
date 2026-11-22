@@ -8,23 +8,10 @@ Unofficial reader for Teledyne LeCroy `.trc` files in Node.js and browsers. Deco
 
 ## Install
 
-Once version 0.2.0 is available on npm, install it in your application.
+[lecroy-trc on npm](https://www.npmjs.com/package/lecroy-trc)
 
 ```sh
 npm install lecroy-trc
-```
-
-To build from a checkout, create a local npm archive.
-
-```sh
-npm ci
-npm pack
-```
-
-Install the archive printed by `npm pack` in your application.
-
-```sh
-npm install /path/to/lecroy-trc-0.2.0.tgz
 ```
 
 ## Quick start
