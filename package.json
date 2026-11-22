@@ -20,7 +20,8 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "README.ru.md"
   ],
   "engines": {
     "node": ">=18.12.0"

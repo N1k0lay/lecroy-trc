@@ -1,68 +1,131 @@
 # lecroy-trc
 
-Unofficial TypeScript library for reading Teledyne LeCroy `.trc` waveforms in Node.js and browsers. It has no runtime dependencies. It accepts a `Uint8Array` or Node.js `Buffer`, so the caller can supply data from local files or object storage.
+English · [Русский](README.ru.md)
 
-## Read a waveform
+An unofficial reader for Teledyne LeCroy `.trc` oscilloscope recordings in Node.js and browsers. Extract metadata, decode individual Sequence segments, and prepare plots that preserve narrow peaks.
+
+**Node.js ≥ 18.12.0** · **Built-in TypeScript types** · **Zero runtime dependencies** · **[MIT](LICENSE)**
+
+## Install
+
+Use a checkout of this repository to build the local npm archive.
+
+```sh
+npm ci
+npm pack
+```
+
+Install the archive printed by `npm pack` in your application.
+
+```sh
+npm install /path/to/lecroy-trc-0.2.0.tgz
+```
+
+## Quick start
+
+Save this as `read-trace.mjs` and run `node read-trace.mjs` next to a single-sweep file named `C1.trc`.
 
 ```js
 import { readFile } from 'node:fs/promises';
-import { readTrcHeader, getSampleRangeForTime, getSampleByteRange, decodeSamples } from 'lecroy-trc';
+import { readTrcHeader, getSampleByteRange, decodeSamples } from 'lecroy-trc';
 
 const file = await readFile('C1.trc');
-const header = readTrcHeader(file.subarray(0, 512));
-const range = getSampleRangeForTime(header, { from: -2, to: 10 }, { timeScale: 1e6 });
-const span = getSampleByteRange(header, range);
-const { times, values } = decodeSamples(file.subarray(span.start, span.endExclusive), header, range, 1_000);
+const header = readTrcHeader(file);
+const { start, endExclusive } = getSampleByteRange(header);
+const { times, values } = decodeSamples(file.subarray(start, endExclusive), header);
+
+console.log(header.instrumentName);
+console.log({ samples: values.length, time: times[0], value: values[0] });
 ```
 
-- `readTrcHeader(bytes)` accepts a file prefix containing the WAVEDESC fields. It returns the instrument identifiers, raw waveform source code, trigger clock fields, scales, units and waveform layout. Trigger clock fields have no time zone.
-- `getSampleRangeForTime(header, {from, to}, options?)` selects valid samples at or between the endpoints. It returns half-open indices and returns an empty range when there are no matching samples. Bounds default to the horizontal unit in the file. Set `timeScale: 1e6` to pass microseconds for a trace whose horizontal unit is seconds. For Sequence, pass the decoded segment `timing` in the same options object.
-- `getSampleByteRange(header, range?)` maps valid sample indices to byte offsets in the original file. Both ranges use inclusive start and exclusive end. For an HTTP range request use `bytes=${span.start}-${span.endExclusive - 1}` for a nonempty span.
-- `decodeSamples(bytes, header, range?, buckets?)` accepts the exact byte slice from that range. It returns two `Float64Array` columns in the units reported by the header. Pass a positive bucket limit for graph previews. Each bucket emits its extrema in acquisition order at their original timestamps. A flat bucket emits one point. Omit the bucket limit to decode every selected sample.
+`times` and `values` are `Float64Array` columns. Their units are `header.horizontalUnit` and `header.verticalUnit`. The header also exposes the instrument number, raw waveform source code, scale, offset, and trigger clock fields. The file stores the trigger clock without a time zone.
 
-The default range covers the valid samples. When reading from storage, obtain the header and samples from the same immutable file or object version.
+CommonJS can use `require('lecroy-trc')`. TypeScript resolves the bundled declarations from the same package. Public types include `TrcHeader`, `TimeRange`, `SampleRange`, `SampleSeries`, and `SegmentTiming`.
 
-## TypeScript
+## Read a time window
 
-The npm package includes TypeScript declarations. Import functions and types such as `TrcHeader`, `TimeRange`, `SampleRange`, `SampleSeries` and `SegmentTiming` from `lecroy-trc`.
-
-## Read Sequence segments
-
-When `header.isSequence` is true, use a zero-based segment index. Each segment has its own entry in the TRIGTIME block. You can fetch that entry and the selected sample range independently.
+Use the header to locate a window before reading its sample bytes. This works with local file reads, HTTP Range requests, and object storage.
 
 ```js
-import { getSegmentTimingByteRange, decodeSegmentTiming } from 'lecroy-trc';
+import { getSampleRangeForTime, getSampleByteRange } from 'lecroy-trc';
 
-for (let index = 0; index < header.segmentCount; index++) {
-  const entry = getSegmentTimingByteRange(header, index);
-  const timing = decodeSegmentTiming(file.subarray(entry.start, entry.endExclusive), header, index);
-  const span = getSampleByteRange(header, undefined, index);
-  const { times, values } = decodeSamples(
-    file.subarray(span.start, span.endExclusive), header, undefined, 1_000, timing,
-  );
-  // The elapsed time from the first trigger to sample i is timing.triggerTime + times[i].
-}
+// For a waveform whose horizontal unit is seconds, pass bounds in microseconds.
+const range = getSampleRangeForTime(header, { from: -2, to: 10 }, { timeScale: 1e6 });
+const span = getSampleByteRange(header, range);
 ```
 
-`timing.triggerTime` is the time in seconds from the first trigger to this segment's trigger. `timing.triggerOffset` is the time from this segment's trigger to its first stored sample. `decodeSamples` returns sample times relative to the segment's own trigger using its offset. An explicit sample range is relative to the start of the chosen segment. If omitted, the range is the intersection of that segment and the valid samples reported by the descriptor.
+1. Read a prefix containing the complete `WAVEDESC` descriptor and pass it to `readTrcHeader`.
+2. Select a time window. Both time endpoints are inclusive. The resulting sample indices and byte offsets use an exclusive end.
+3. For a nonempty span, request `bytes=${span.start}-${span.endExclusive - 1}`, or read the equivalent slice from a local file. Use the same file or object version for the header and samples.
+4. Pass those exact bytes to `decodeSamples(bytes, header, range)`. For an overview, add a bucket limit such as `decodeSamples(bytes, header, range, 1_000)`.
+
+An overview keeps each bucket's minimum and maximum at their original timestamps, in acquisition order. A flat bucket yields one point. Omitting the limit returns every selected sample. `timeScale` changes how selection bounds are interpreted. Decoded timestamps remain in the file's horizontal unit.
+
+## Read a Sequence segment
+
+A Sequence contains consecutive segments. Each has a zero-based index and two timing values in seconds in the `TRIGTIME` block. Download [pulse_sequence.trc](https://raw.githubusercontent.com/lobis/lecroy-scope/2f627b418100d979c5a9b9dc9312fc275c534ce7/tests/files/pulse_sequence.trc) to run this example.
+
+```js
+import { readFile } from 'node:fs/promises';
+import {
+  readTrcHeader, getSegmentTimingByteRange, decodeSegmentTiming,
+  getSampleByteRange, decodeSamples,
+} from 'lecroy-trc';
+
+const file = await readFile('pulse_sequence.trc');
+const header = readTrcHeader(file);
+const slice = ({ start, endExclusive }) => file.subarray(start, endExclusive);
+
+const index = 0;
+const timing = decodeSegmentTiming(slice(getSegmentTimingByteRange(header, index)), header, index);
+const span = getSampleByteRange(header, undefined, index);
+const { times, values } = decodeSamples(slice(span), header, undefined, undefined, timing);
+
+console.log({ triggerTime: timing.triggerTime, samples: values.length, firstTime: times[0] });
+```
+
+- `timing.triggerTime` is the elapsed time from the first trigger in the Sequence to this segment's trigger.
+- `timing.triggerOffset` is the time from this segment's trigger to its first stored sample.
+- `times[i]` is relative to this segment's trigger. For an axis relative to the first trigger, use `timing.triggerTime + times[i]`.
+- To select a time window within a segment, pass `{ timing }` to `getSampleRangeForTime` and pass the same segment index to `getSampleByteRange`.
+
+## Use in a browser
+
+Serve `dist/browser/index.js` as a JavaScript module, for example at `/vendor/lecroy-trc.js`. It accepts bytes from a browser `File` or a network response.
+
+```js
+import { readTrcHeader } from '/vendor/lecroy-trc.js';
+
+const header = readTrcHeader(new Uint8Array(await file.slice(0, 512).arrayBuffer()));
+console.log(header.instrumentName);
+```
+
+In this example, `file` is a browser `File`. Read more of the prefix if the descriptor extends past the first 512 bytes. From source, `npm run build:browser` generates the browser module.
 
 ## Format support
 
-The library reads `LECROY_2_3` descriptors and decodes contiguous single-sweep and Sequence traces with signed 8-bit or 16-bit samples in either byte order. A Sequence needs one TRIGTIME entry per captured segment. Other layouts, such as RIS and dual-array traces, expose header metadata and report `supportsSampleReading: false`. A request to decode such a layout throws `TrcFormatError`. The library covers file reading. Instrument control requires a separate transport.
+| Feature | Support |
+| --- | --- |
+| Descriptor template | `LECROY_2_3` |
+| Stored samples | Signed 8-bit or 16-bit, little- or big-endian |
+| Acquisition | Contiguous single sweep and Sequence with one `TRIGTIME` entry per captured segment |
+| Other layouts | Metadata for recognized headers. RIS, sparse, and dual-array waveforms are outside sample decoding support. |
 
-The descriptor layout and scale formulas follow the [Teledyne LeCroy WAVEDESC documentation](https://cdn.teledynelecroy.com/files/manuals/maui-remote-control-and-automation-manual.pdf#page=190).
+Check `header.supportsSampleReading` before decoding a waveform whose layout may vary. A truncated byte slice or an unsupported layout passed to the decoder throws `TrcFormatError`. The file format and timing formulas follow the [Teledyne LeCroy WAVEDESC reference](https://cdn.teledynelecroy.com/files/manuals/maui-remote-control-and-automation-manual.pdf#page=190).
 
 ## Development
 
-Run `npm ci`, `npm test` and `npm pack --dry-run` from this directory. Automated tests use generated files with known headers and calibration values.
+```sh
+npm ci
+npm run typecheck
+npm test
+npm run test:upstream
+npm pack --dry-run
+```
 
-`npm run test:upstream` downloads a pinned public `pulse_sequence.trc` fixture and compares all 20 segments against reference values generated with `lecroyscope` 1.0.0. To use a local copy, run `npm run test:upstream -- /path/to/pulse_sequence.trc`.
+The unit tests use generated traces. The upstream check downloads a pinned `pulse_sequence.trc` sample and compares all 20 segments against reference values from [lecroyscope 1.0.0](https://pypi.org/project/lecroyscope/1.0.0/). For a local copy, use `npm run test:upstream -- /path/to/pulse_sequence.trc`.
 
-## Node.js compatibility
-
-The package and development tools require Node.js 18.12.0 or later. This is the first Node.js 18 LTS release. The Node.js 18 branch has reached end of life. For deployment, use a [maintained LTS release](https://nodejs.org/en/about/previous-releases).
-
-`npm run build:browser` generates `dist/browser/index.js`, a native ES module. Serve it as JavaScript and import it by URL in a browser.
+For a format compatibility issue, include the instrument model, descriptor template, and a shareable sample if available. For production deployments, use a [maintained Node.js LTS release](https://nodejs.org/en/about/previous-releases).
 
 ## License
 
