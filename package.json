@@ -1,6 +1,6 @@
 {
   "name": "lecroy-trc",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Read Teledyne LeCroy TRC headers and waveform samples in Node.js",
   "license": "MIT",
   "repository": {
