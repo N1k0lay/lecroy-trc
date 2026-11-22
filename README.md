@@ -22,6 +22,10 @@ const { times, values } = decodeSamples(file.subarray(span.start, span.endExclus
 
 The default range covers the valid samples. When reading from storage, obtain the header and samples from the same immutable file or object version.
 
+## TypeScript
+
+The npm package includes TypeScript declarations. Import functions and types such as `TrcHeader`, `TimeRange`, `SampleRange`, `SampleSeries` and `SegmentTiming` from `lecroy-trc`.
+
 ## Read Sequence segments
 
 When `header.isSequence` is true, use a zero-based segment index. Each segment has its own entry in the TRIGTIME block. You can fetch that entry and the selected sample range independently.
@@ -56,7 +60,7 @@ Run `npm ci`, `npm test` and `npm pack --dry-run` from this directory. Automated
 
 ## Node.js compatibility
 
-The supported Node.js floor for the package and development tools is 22. Compatibility smoke tests on the built package passed on Node.js 14.0.0 for CommonJS and 14.13.0 for named ES module imports. For deployment, use a [maintained LTS release](https://nodejs.org/en/about/previous-releases).
+The package and development tools require Node.js 18.12.0 or later. This is the first Node.js 18 LTS release. The Node.js 18 branch has reached end of life. For deployment, use a [maintained LTS release](https://nodejs.org/en/about/previous-releases).
 
 `npm run build:browser` generates `dist/browser/index.js`, a native ES module. Serve it as JavaScript and import it by URL in a browser.
 
